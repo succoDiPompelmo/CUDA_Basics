@@ -106,7 +106,7 @@ void runFragmentShader( unsigned char* frameBuffer,
     float3 colour = make_float3(0.0f, 0.0f, 0.0f);
 
 	for (globalLight const &l : lightSources) {
-		float lightNormalDotProduct = 
+		float lightNormalDotProduct =
 			normal.x * l.direction.x + normal.y * l.direction.y + normal.z * l.direction.z;
 
 		float3 diffuseReflectionColour;
@@ -264,6 +264,29 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
 
     std::vector<GPUMesh> meshes = loadWavefrontGPU(inputFile, false);
 
+    // CUDA INITIALISATION
+
+    int nDevices;
+    checkCudaErrors(cudaGetDeviceCount(&nDevices));
+
+    std::cout << "\n" << "--- Devices ---" << '\n';
+
+    for (int i = 0; i < nDevices; i++)
+    {
+      cudaDeviceProp prop;
+      checkCudaErrors(cudaGetDeviceProperties(&prop, i));
+      std::cout << "Device Number:  " << i << '\n';
+      std::cout << "Device Name:  " << prop.name << '\n';
+      std::cout << "Memory Clock Rate:  " << prop.memoryClockRate << '\n';
+      std::cout << "Memory Bus Width (bits):  " << prop.memoryBusWidth << '\n';
+      std::cout << "Peak Memory Bandwidth (GB/s):  " << 2.0 * prop.memoryClockRate * (prop.memoryBusWidth/8)/1.0e6 << '\n';
+    }
+
+    std::cout << "--- END Devices---" << '\n' << "\n";
+
+    checkCudaErrors(cudaSetDevice(0));
+
+
     // We first need to allocate some buffers.
     // The framebuffer contains the image being rendered.
     unsigned char* frameBuffer = new unsigned char[width * height * 4];
@@ -302,8 +325,6 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
             boundingBoxMax.y - boundingBoxMin.y,
             boundingBoxMax.z - boundingBoxMin.z);
     float largestBoundingBoxSide = std::max(std::max(boundingBoxDimensions.x, boundingBoxDimensions.y), boundingBoxDimensions.z);
-
-
 
     // Each recursion level splits up the lowest level nodes into 28 smaller ones.
     // This regularity means we can calculate the total number of objects we need to render

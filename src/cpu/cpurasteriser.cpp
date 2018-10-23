@@ -191,6 +191,9 @@ std::vector<unsigned char> rasteriseCPU(std::string inputFile, unsigned int widt
 	std::cout << "Rendering an image on the CPU.." << std::endl;
     std::cout << "Loading '" << inputFile << "' file... " << std::endl;
 
+    std::chrono::time_point<std::chrono::system_clock> start, end;
+    std::chrono::duration<double> elapsed_seconds;
+
 	std::vector<Mesh> meshes = loadWavefront(inputFile, false);
 
 	// We first need to allocate some buffers.
@@ -241,6 +244,10 @@ std::vector<unsigned char> rasteriseCPU(std::string inputFile, unsigned int widt
 
 	fillWorkQueue(workQueue, largestBoundingBoxSide, depthLimit);
 
+  // Start timer
+  start = std::chrono::system_clock::now();
+
+    #pragma omp parallel for schedule(dynamic)
     for(unsigned int item = 0; item < totalItemsToRender; item++) {
         if(item % 10000 == 0) {
             std::cout << item << "/" << totalItemsToRender << " complete." << std::endl;
@@ -250,9 +257,17 @@ std::vector<unsigned char> rasteriseCPU(std::string inputFile, unsigned int widt
             Mesh &mesh = meshes.at(i);
             Mesh &transformedMesh = transformedMeshes.at(i);
             runVertexShader(mesh, transformedMesh, objectToRender.distanceOffset, objectToRender.scale, width, height);
+            #pragma omp critical
             rasteriseTriangles(transformedMesh, frameBuffer, depthBuffer, width, height);
         }
     }
+
+  // End timer
+  end = std::chrono::system_clock::now();
+
+  // Print timer
+  elapsed_seconds = end - start;
+  std::cout << elapsed_seconds.count() << '\n';
 
 	std::cout << "Finished!" << std::endl;
 

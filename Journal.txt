@@ -1,0 +1,31 @@
+###TASK 1
+
+Point 1-a
+
+-r 1920x1080 -d 4   ->   26.1654s  |    26.4055s
+-r 1920x1080 -d 3   ->   1.65711s  |    1.65393s
+
+Point 1-b
+
+Point 1-c
+Not correct, Thery are not always the same.
+The cause of race condition was the call to the funtion rasteriseTringale(). The race conditions was caused by threads try to writing in the frame buffer at the same time.
+
+Point 1-d
+
+-r 1920x1080 -d 4  
+
+Dynamic -> 16.4986s
+
+Static  -> 24.6847s
+
+Guided  -> 23.6628s
+
+Point 1-e
+
+
+###TASK2
+
+Point 2-a
+
+

@@ -9,17 +9,17 @@ int main(int argc, const char **argv) {
 	const std::string defaultOutput("../output/sphere.png");
 	const unsigned int defaultWidth = 1920;
 	const unsigned int defaultHeight = 1080;
-	const unsigned int defaultDepth = 3;
+	const unsigned int defaultDepth = 4;
 	arrrgh::parser parser("gpurender", "Renders raster images on the CPU or GPU");
 	const auto& showHelp = parser.add<bool>(
-		"help", 
-		"Show this help message", 
-		'h', 
+		"help",
+		"Show this help message",
+		'h',
 		arrrgh::Optional, false);
 	const auto& inputFile = parser.add<std::string>(
-		"input", 
-		"The location of the input model file.", 
-		'i', 
+		"input",
+		"The location of the input model file.",
+		'i',
 		arrrgh::Optional, defaultInput);
 	const auto& outputFile = parser.add<std::string>(
 		"output",
@@ -46,7 +46,7 @@ int main(int argc, const char **argv) {
 		"Set the recursion depth of the sierpinski carpet",
 		'd',
 		arrrgh::Optional, defaultDepth);
-	
+
 	try
 	{
 		parser.parse(argc, argv);
