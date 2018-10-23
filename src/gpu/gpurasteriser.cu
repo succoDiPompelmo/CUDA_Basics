@@ -257,6 +257,13 @@ void fillWorkQueue(
 
 }
 
+// Kernel definition
+__global__ void frameBufferInitialisation(unsigned char *GPUframeBuffer)
+{
+  if (threadID.y = 3) GPUframeBuffer[(blockDim.x + blockDim.y) * 1024 + threadID.x + threadID.y] = 255;
+  else GPUframeBuffer[(blockDim.x + blockDim.y) * 1024 + threadID.x + threadID.y] = 0;
+}
+
 // This function kicks off the rasterisation process.
 std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int width, unsigned int height, unsigned int depthLimit) {
     std::cout << "Rendering an image on the GPU.." << std::endl;
@@ -297,6 +304,11 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
 
     // Depth buffer GPU initialisation
     checkCudaErrors(cudaMemset((void *)GPUdepthBuffer, 0, width * height));
+
+    // Kernel - Frame buffer initialisation
+    int numBlocks(5, 405);
+    dim3 threadsPerBlock(256, 4);
+    frameBufferInitialisation<<<numBlocks, threadsPerBlock>>>(GPUframeBuffer);
 
     // We first need to allocate some buffers.
     // The framebuffer contains the image being rendered.
