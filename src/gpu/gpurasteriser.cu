@@ -260,8 +260,8 @@ void fillWorkQueue(
 // Kernel definition
 __global__ void frameBufferInitialisation(unsigned char *GPUframeBuffer)
 {
-  if (threadID.y = 3) GPUframeBuffer[(blockDim.x + blockDim.y) * 1024 + threadID.x + threadID.y] = 255;
-  else GPUframeBuffer[(blockDim.x + blockDim.y) * 1024 + threadID.x + threadID.y] = 0;
+  if (threadID.y = 3) GPUframeBuffer[(blockDim.x + blockDim.y) * 1024 + threadID.x * 4 + threadID.y] = 255;
+  else GPUframeBuffer[(blockDim.x + blockDim.y) * 1024 + threadID.x * 4 + threadID.y] = 0;
 }
 
 // This function kicks off the rasterisation process.
