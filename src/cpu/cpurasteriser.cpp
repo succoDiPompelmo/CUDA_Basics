@@ -247,7 +247,7 @@ std::vector<unsigned char> rasteriseCPU(std::string inputFile, unsigned int widt
   // Start timer
   start = std::chrono::system_clock::now();
 
-    #pragma omp parallel for schedule(dynamic)
+    #pragma omp parallel for schedule(guided)
     for(unsigned int item = 0; item < totalItemsToRender; item++) {
         if(item % 10000 == 0) {
             std::cout << item << "/" << totalItemsToRender << " complete." << std::endl;
@@ -255,9 +255,8 @@ std::vector<unsigned char> rasteriseCPU(std::string inputFile, unsigned int widt
         workItemCPU objectToRender = workQueue.at(item);
         for (unsigned int i = 0; i < meshes.size(); i++) {
             Mesh &mesh = meshes.at(i);
-            Mesh &transformedMesh = transformedMeshes.at(i);
+            Mesh transformedMesh = transformedMeshes.at(i);
             runVertexShader(mesh, transformedMesh, objectToRender.distanceOffset, objectToRender.scale, width, height);
-            #pragma omp critical
             rasteriseTriangles(transformedMesh, frameBuffer, depthBuffer, width, height);
         }
     }

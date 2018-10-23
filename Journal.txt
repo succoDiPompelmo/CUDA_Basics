@@ -8,18 +8,18 @@ Point 1-a
 Point 1-b
 
 Point 1-c
-Not correct, Thery are not always the same.
-The cause of race condition was the call to the funtion rasteriseTringale(). The race conditions was caused by threads try to writing in the frame buffer at the same time.
+Not correct, There are not always the same.
+The cause of race condition was the call to the function rasteriseTringale(). The race conditions was caused by threads try to writing in the frame buffer at the same time.
 
 Point 1-d
 
--r 1920x1080 -d 4  
+-r 1920x1080 -d 4
 
-Dynamic -> 16.4986s
+Dynamic -> 4.85024s
 
-Static  -> 24.6847s
+Static  -> 4.99146s
 
-Guided  -> 23.6628s
+Guided  -> 4.81342s
 
 Point 1-e
 
@@ -27,5 +27,3 @@ Point 1-e
 ###TASK2
 
 Point 2-a
-
-

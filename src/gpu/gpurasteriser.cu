@@ -284,8 +284,19 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
 
     std::cout << "--- END Devices---" << '\n' << "\n";
 
+    // Set device for GPU computation
     checkCudaErrors(cudaSetDevice(0));
 
+    // Frame buffer allocation on the GPU
+    unsigned char *GPUframeBuffer;
+    checkCudaErrors(cudaMalloc((void **)&GPUframeBuffer, sizeof(unsigned char) * width * height * 4));
+
+    // Depth buffer allocation on the GPU
+    unsigned char *GPUdepthBuffer;
+    checkCudaErrors(cudaMalloc((void **)&GPUdepthBuffer, sizeof(unsigned char) * width * height));
+
+    // Depth buffer GPU initialisation
+    checkCudaErrors(cudaMemset((void *)GPUdepthBuffer, 0, width * height));
 
     // We first need to allocate some buffers.
     // The framebuffer contains the image being rendered.
