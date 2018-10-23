@@ -310,6 +310,9 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
     dim3 threadsPerBlock(256, 4);
     frameBufferInitialisation<<<numBlocks, threadsPerBlock>>>(GPUframeBuffer);
 
+    // Wait for the kernel to finish the computation
+    checkCudaErrors(cudaDeviceSynchronize());
+
     // We first need to allocate some buffers.
     // The framebuffer contains the image being rendered.
     unsigned char* frameBuffer = new unsigned char[width * height * 4];
@@ -358,8 +361,13 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
     }
 
     workItemGPU* workQueue = new workItemGPU[totalItemsToRender];
-
     std::cout << "Number of items to be rendered: " << totalItemsToRender << std::endl;
+
+    // Allocate workQueue into the GPU
+    workItemGPU* workQueueGPU;
+    checkCudaErrors(cudaMalloc((void **)&workQueueGPU, sizeof(workItemGPU) * totalItemsToRender));
+    // Transfer from workQueue to workQueueGPU
+    checkCudaErrors(cudaMemcpy(workQueueGPU, workQueue, sizeof(workItemGPU) * totalItemsToRender, cudaMemcpyHostToDevice));
 
     unsigned long counter = 0;
     fillWorkQueue(workQueue, largestBoundingBoxSide, depthLimit, &counter);
