@@ -326,7 +326,7 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
     std::cout << "\n" << "FRAME BUFFER TEST : ";
     unsigned int counterF = 0;
     unsigned int counterF0 = 0;
-    for (int i = 0; i < width * height * 4; i++)
+    for (unsigned int i = 0; i < width * height * 4; i++)
     {
       if ((int) frameBufferTest[i] == 255) counterF++;
       else counterF0++;
@@ -338,7 +338,7 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
     checkCudaErrors(cudaMemcpy(depthBufferTest, GPUdepthBuffer, sizeof(float) * width * height, cudaMemcpyDeviceToHost));
     std::cout << "\n" << "DEPTH BUFFER TEST : ";
     unsigned int counterZ = 0;
-    for (int i = 0; i < width * height; i++)
+    for (unsigned int i = 0; i < width * height; i++)
     {
       if ((int) depthBufferTest[i] == 0) counterZ++;
     }
@@ -393,14 +393,74 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
     workItemGPU* workQueue = new workItemGPU[totalItemsToRender];
     std::cout << "Number of items to be rendered: " << totalItemsToRender << std::endl;
 
+    // TRANSFER MESHES OM THE GPU
+
+    GPUMesh* CPUMeshes = new GPUMesh[meshes.size()];
+    GPUMesh* GPUMeshes = nullptr;
+    // Allocate the Meshes array on the GPU
+    checkCudaErrors(cudaMalloc((void **)&GPUMeshes, sizeof(GPUMesh) * meshes.size()));
+
+    for (unsigned int i = 0; i < meshes.size(); i++)
+    {
+      // Allocate Vertices information on GPU
+      float4* verticesGPU;
+      checkCudaErrors(cudaMalloc((void **)&verticesGPU, sizeof(float4) * meshes.at(i).vertexCount));
+      // Allocate Normals information on GPU
+      float3* normalsGPU;
+      checkCudaErrors(cudaMalloc((void **)&normalsGPU, sizeof(float3) * meshes.at(i).vertexCount));
+
+      // Transfer vertices to the GPU
+      checkCudaErrors(cudaMemcpy(verticesGPU, (float4*)meshes.at(i).vertices, sizeof(float4) * meshes.at(i).vertexCount, cudaMemcpyHostToDevice));
+      // Transfer normals to the GPU
+      checkCudaErrors(cudaMemcpy(normalsGPU, meshes.at(i).normals, sizeof(float3) * meshes.at(i).vertexCount, cudaMemcpyHostToDevice));
+
+      // Store the device pointer on the CPU array of meshes
+      CPUMeshes[i].vertices = verticesGPU;
+      CPUMeshes[i].normals = normalsGPU;
+      // Copy all the other field into the mesh stored on the CPU
+      CPUMeshes[i].vertexCount = meshes.at(i).vertexCount;
+      CPUMeshes[i].objectDiffuseColour = meshes.at(i).objectDiffuseColour;
+      CPUMeshes[i].hasNormals = meshes.at(i).hasNormals;
+    }
+
+    // Transfer array of Meshes from CPU to GPU
+    checkCudaErrors(cudaMemcpy(GPUMeshes, CPUMeshes, sizeof(GPUMesh) * meshes.size(), cudaMemcpyHostToDevice));
+
+    // MESH ARRAY TESTS
+    GPUMesh* GPUMeshTest = new GPUMesh[meshes.size()];
+    checkCudaErrors(cudaMemcpy(GPUMeshTest, GPUMeshes, sizeof(GPUMesh) * meshes.size(), cudaMemcpyDeviceToHost));
+    for (int i = 0; i < meshes.size(); i++)
+    {
+      //std::cout << "VERTEX TEST :  " << GPUMeshTest[i].vertices[0].y << '\n';
+      //std::cout << "VERTEX ORIGINAL: " << meshes.at(i).vertices[0].x <<'\n';
+    }
+    std::cout << "VERTEX COUNT ON THE ORIGINAL MESH : " << meshes.at(0).vertices[0].x <<'\n';
+    std::cout << "VERTEX COUNT ON THE TEST MESH :  " << GPUMeshTest[0].vertices[0].x << '\n';
+
+
+    unsigned long counter = 0;
+    fillWorkQueue(workQueue, largestBoundingBoxSide, depthLimit, &counter);
+
     // Allocate workQueue into the GPU
     workItemGPU* workQueueGPU;
     checkCudaErrors(cudaMalloc((void **)&workQueueGPU, sizeof(workItemGPU) * totalItemsToRender));
     // Transfer from workQueue to workQueueGPU
     checkCudaErrors(cudaMemcpy(workQueueGPU, workQueue, sizeof(workItemGPU) * totalItemsToRender, cudaMemcpyHostToDevice));
 
-    unsigned long counter = 0;
-    fillWorkQueue(workQueue, largestBoundingBoxSide, depthLimit, &counter);
+    // WORKQUEUE TEST
+    workItemGPU* workQueueGPUTest = new workItemGPU[totalItemsToRender];
+    checkCudaErrors(cudaMemcpy(workQueueGPUTest , workQueueGPU, sizeof(workItemGPU) * totalItemsToRender, cudaMemcpyDeviceToHost));
+    int counterWorkQueue = 0;
+    for (int i = 0; i < totalItemsToRender; i++)
+    {
+      if (workQueueGPUTest[i].scale == workQueue[i].scale &&
+          workQueueGPUTest[i].distanceOffset.x == workQueue[i].distanceOffset.x &&
+          workQueueGPUTest[i].distanceOffset.y == workQueue[i].distanceOffset.y &&
+          workQueueGPUTest[i].distanceOffset.z == workQueue[i].distanceOffset.z)
+          counterWorkQueue++;
+    }
+
+    if (counterWorkQueue == totalItemsToRender) std::cout << "\n" << "WORK QUEUE TEST :  PASSED" << "\n" <<'\n';
 
 	renderMeshes(
 			totalItemsToRender, workQueue,
