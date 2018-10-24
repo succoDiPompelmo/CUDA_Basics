@@ -277,7 +277,7 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
 
     std::vector<GPUMesh> meshes = loadWavefrontGPU(inputFile, false);
 
-    // CUDA INITIALISATIONGPUframeGPUframeBufferGPUframeBufferBuffer
+    // CUDA INITIALISATION
 
     int nDevices;
     checkCudaErrors(cudaGetDeviceCount(&nDevices));
@@ -290,11 +290,11 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
       std::cout << "Device Number:  " << i << '\n';
       std::cout << "Device Name:  " << prop.name << '\n';
       std::cout << "Memory Clock Rate:  " << prop.memoryClockRate << '\n';
-      std::cout << "Memory Bus Width (ebits):  " << prop.memoryBusWidth << '\n';
+      std::cout << "Memory Bus Width (bits):  " << prop.memoryBusWidth << '\n';
       std::cout << "Peak Memory Bandwidth (GB/s):  " << 2.0 * prop.memoryClockRate * (prop.memoryBusWidth/8)/1.0e6 << '\n';
     }
 
-    std::cout << "--- END Devices---" GPUframeGPUframeBufferGPUframeBufferBuffer<< '\n' << "\n";
+    std::cout << "--- END Devices---" << '\n' << "\n";
 
     // Set device for GPU computation
     checkCudaErrors(cudaSetDevice(0));
@@ -304,8 +304,8 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
     checkCudaErrors(cudaMalloc((void **)&GPUframeBuffer, sizeof(unsigned char) * width * height * 4));
 
     // Depth buffer allocation on the GPU
-    unsigned char *GPUdepthBuffer;
-    checkCudaErrors(cudaMalloc((void **)&GPUdepthBuffer, sizeof(unsigned char) * width * height));
+    float *GPUdepthBuffer;
+    checkCudaErrors(cudaMalloc((void **)&GPUdepthBuffer, sizeof(float) * width * height));
 
     // Depth buffer GPU initialisation
     checkCudaErrors(cudaMemset((void *)GPUdepthBuffer, 0, width * height));
@@ -321,7 +321,7 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
     // We first need to allocate some buffers.
     // The framebuffer contains the image being rendered.
     unsigned char* frameBuffer = new unsigned char[width * height * 4];
-    // The depth buffer is used to makGPUframeGPUframeBufferGPUframeBufferBuffere sure that objects closer to the camera occlude/obscure objects that are behind it
+    // The depth buffer is used to make sure that objects closer to the camera occlude/obscure objects that are behind it
     for (unsigned int i = 0; i < (4 * width * height); i+=4) {
 		frameBuffer[i + 0] = 0;
 		frameBuffer[i + 1] = 0;
@@ -344,7 +344,6 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
             boundingBoxMin.x = std::min(boundingBoxMin.x, meshes.at(i).vertices[vertex].x);
             boundingBoxMin.y = std::min(boundingBoxMin.y, meshes.at(i).vertices[vertex].y);
             boundingBoxMin.z = std::min(boundingBoxMin.z, meshes.at(i).vertices[vertex].z);
-GPUframeGPUframeBufferGPUframeBufferBuffer
             boundingBoxMax.x = std::max(boundingBoxMax.x, meshes.at(i).vertices[vertex].x);
             boundingBoxMax.y = std::max(boundingBoxMax.y, meshes.at(i).vertices[vertex].y);
             boundingBoxMax.z = std::max(boundingBoxMax.z, meshes.at(i).vertices[vertex].z);
