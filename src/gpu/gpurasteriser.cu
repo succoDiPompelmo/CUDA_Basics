@@ -434,6 +434,7 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
       //std::cout << "VERTEX TEST :  " << GPUMeshTest[i].vertices[0].y << '\n';
       //std::cout << "VERTEX ORIGINAL: " << meshes.at(i).vertices[0].x <<'\n';
     }
+    std::cout << "VERTEX COUNT ON THE ORIGINAL MESH : " <<  <<'\n';
     std::cout << "VERTEX COUNT ON THE ORIGINAL MESH : " << meshes.at(0).vertices[0].x <<'\n';
     std::cout << "VERTEX COUNT ON THE TEST MESH :  " << GPUMeshTest[0].vertices[0].x << '\n';
 
