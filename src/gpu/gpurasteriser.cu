@@ -260,12 +260,12 @@ void fillWorkQueue(
 // Kernel definition
 __global__ void frameBufferInitialisation(unsigned char *GPUframeBuffer)
 {
-  int index = (blockIdx.x * 5 + blockIdx.y) * 1024 + threadIdx.x * 4 + threadIdx.y;
+  int index = (blockIdx.x) * 1024 + threadIdx.x * 4 + threadIdx.y;
   if (threadIdx.y == 3) GPUframeBuffer[index] = 255;
   else GPUframeBuffer[index] = 0;
 }
 
-__global__ void depthBufferInitialisation(unsigned char *GPUdepthBuffer)
+__global__ void depthBufferInitialisation(float *GPUdepthBuffer)
 {
   GPUdepthBuffer[(blockIdx.x * 5 + blockIdx.y) * 1024 + threadIdx.x] = 0;
 }
@@ -299,24 +299,50 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
     // Set device for GPU computation
     checkCudaErrors(cudaSetDevice(0));
 
-    // Frame buffer allocation on the GPU
-    unsigned char *GPUframeBuffer;
-    checkCudaErrors(cudaMalloc((void **)&GPUframeBuffer, sizeof(unsigned char) * width * height * 4));
-
     // Depth buffer allocation on the GPU
     float *GPUdepthBuffer;
     checkCudaErrors(cudaMalloc((void **)&GPUdepthBuffer, sizeof(float) * width * height));
-
-    // Depth buffer GPU initialisation
-    checkCudaErrors(cudaMemset((void *)GPUdepthBuffer, 0, width * height));
-
-    // Kernel - Frame buffer initialisation
-    dim3 numBlocks(5, 405);
-    dim3 threadsPerBlock(256, 4);
-    frameBufferInitialisation<<<numBlocks, threadsPerBlock>>>(GPUframeBuffer);
-
+    // Kernel - Depth buffer initialisation
+    dim3 numBlocksD(5, 405);
+    dim3 threadsPerBlockD(1024, 1);
+    depthBufferInitialisation<<<numBlocksD, threadsPerBlockD>>>(GPUdepthBuffer);
     // Wait for the kernel to finish the computation
     checkCudaErrors(cudaDeviceSynchronize());
+
+    // Frame buffer allocation on the GPU
+    unsigned char *GPUframeBuffer;
+    checkCudaErrors(cudaMalloc((void **)&GPUframeBuffer, sizeof(unsigned char) * width * height * 4));
+    // Kernel - Frame buffer initialisation
+    dim3 numBlocksF(8100, 1);
+    dim3 threadsPerBlockF(256, 4);
+    frameBufferInitialisation<<<numBlocksF, threadsPerBlockF>>>(GPUframeBuffer);
+    // Wait for the kernel to finish the computation
+    checkCudaErrors(cudaDeviceSynchronize());
+
+    unsigned char* frameBufferTest = new unsigned char[width * height * 4];
+
+    // Test if the frame buffer on the GPU contain the right value
+    checkCudaErrors(cudaMemcpy(frameBufferTest, GPUframeBuffer, sizeof(unsigned char) * width * height * 4, cudaMemcpyDeviceToHost));
+    std::cout << "\n" << "FRAME BUFFER TEST : ";
+    unsigned int counterF = 0;
+    unsigned int counterF0 = 0;
+    for (int i = 0; i < width * height * 4; i++)
+    {
+      if ((int) frameBufferTest[i] == 255) counterF++;
+      else counterF0++;
+    }
+    if (counterF == width * height && counterF0 == width * height * 3) std::cout << "PASSED" << "\n" << '\n';
+
+    // Test if the depth buffer on the GPU contain the right value
+    float* depthBufferTest = new float[width * height];
+    checkCudaErrors(cudaMemcpy(depthBufferTest, GPUdepthBuffer, sizeof(float) * width * height, cudaMemcpyDeviceToHost));
+    std::cout << "\n" << "DEPTH BUFFER TEST : ";
+    unsigned int counterZ = 0;
+    for (int i = 0; i < width * height; i++)
+    {
+      if ((int) depthBufferTest[i] == 0) counterZ++;
+    }
+    if (counterZ == width * height) std::cout << "PASSED" << '\n' << "\n";
 
     // We first need to allocate some buffers.
     // The framebuffer contains the image being rendered.
