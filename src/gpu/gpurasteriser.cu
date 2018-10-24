@@ -260,8 +260,14 @@ void fillWorkQueue(
 // Kernel definition
 __global__ void frameBufferInitialisation(unsigned char *GPUframeBuffer)
 {
-  if (threadID.y = 3) GPUframeBuffer[(blockDim.x + blockDim.y) * 1024 + threadID.x * 4 + threadID.y] = 255;
-  else GPUframeBuffer[(blockDim.x + blockDim.y) * 1024 + threadID.x * 4 + threadID.y] = 0;
+  int index = (blockIdx.x * 5 + blockIdx.y) * 1024 + threadIdx.x * 4 + threadIdx.y;
+  if (threadIdx.y == 3) GPUframeBuffer[index] = 255;
+  else GPUframeBuffer[index] = 0;
+}
+
+__global__ void depthBufferInitialisation(unsigned char *GPUdepthBuffer)
+{
+  GPUdepthBuffer[(blockIdx.x * 5 + blockIdx.y) * 1024 + threadIdx.x] = 0;
 }
 
 // This function kicks off the rasterisation process.
@@ -271,11 +277,10 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
 
     std::vector<GPUMesh> meshes = loadWavefrontGPU(inputFile, false);
 
-    // CUDA INITIALISATION
+    // CUDA INITIALISATIONGPUframeGPUframeBufferGPUframeBufferBuffer
 
     int nDevices;
     checkCudaErrors(cudaGetDeviceCount(&nDevices));
-
     std::cout << "\n" << "--- Devices ---" << '\n';
 
     for (int i = 0; i < nDevices; i++)
@@ -285,11 +290,11 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
       std::cout << "Device Number:  " << i << '\n';
       std::cout << "Device Name:  " << prop.name << '\n';
       std::cout << "Memory Clock Rate:  " << prop.memoryClockRate << '\n';
-      std::cout << "Memory Bus Width (bits):  " << prop.memoryBusWidth << '\n';
+      std::cout << "Memory Bus Width (ebits):  " << prop.memoryBusWidth << '\n';
       std::cout << "Peak Memory Bandwidth (GB/s):  " << 2.0 * prop.memoryClockRate * (prop.memoryBusWidth/8)/1.0e6 << '\n';
     }
 
-    std::cout << "--- END Devices---" << '\n' << "\n";
+    std::cout << "--- END Devices---" GPUframeGPUframeBufferGPUframeBufferBuffer<< '\n' << "\n";
 
     // Set device for GPU computation
     checkCudaErrors(cudaSetDevice(0));
@@ -306,7 +311,7 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
     checkCudaErrors(cudaMemset((void *)GPUdepthBuffer, 0, width * height));
 
     // Kernel - Frame buffer initialisation
-    int numBlocks(5, 405);
+    dim3 numBlocks(5, 405);
     dim3 threadsPerBlock(256, 4);
     frameBufferInitialisation<<<numBlocks, threadsPerBlock>>>(GPUframeBuffer);
 
@@ -316,7 +321,7 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
     // We first need to allocate some buffers.
     // The framebuffer contains the image being rendered.
     unsigned char* frameBuffer = new unsigned char[width * height * 4];
-    // The depth buffer is used to make sure that objects closer to the camera occlude/obscure objects that are behind it
+    // The depth buffer is used to makGPUframeGPUframeBufferGPUframeBufferBuffere sure that objects closer to the camera occlude/obscure objects that are behind it
     for (unsigned int i = 0; i < (4 * width * height); i+=4) {
 		frameBuffer[i + 0] = 0;
 		frameBuffer[i + 1] = 0;
@@ -339,7 +344,7 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
             boundingBoxMin.x = std::min(boundingBoxMin.x, meshes.at(i).vertices[vertex].x);
             boundingBoxMin.y = std::min(boundingBoxMin.y, meshes.at(i).vertices[vertex].y);
             boundingBoxMin.z = std::min(boundingBoxMin.z, meshes.at(i).vertices[vertex].z);
-
+GPUframeGPUframeBufferGPUframeBufferBuffer
             boundingBoxMax.x = std::max(boundingBoxMax.x, meshes.at(i).vertices[vertex].x);
             boundingBoxMax.y = std::max(boundingBoxMax.y, meshes.at(i).vertices[vertex].y);
             boundingBoxMax.z = std::max(boundingBoxMax.z, meshes.at(i).vertices[vertex].z);
