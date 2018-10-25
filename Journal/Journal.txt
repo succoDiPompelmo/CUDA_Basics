@@ -15,11 +15,13 @@ Point 1-d
 
 -r 1920x1080 -d 4
 
-Dynamic -> 4.85024s
+Dynamic      -> 4.85024s | 4.89674s
 
-Static  -> 4.99146s
+Static       -> 4.99146s | 4.99035s
 
-Guided  -> 4.81342s
+Guided       -> 4.81342s | 4.78822s
+
+Dynamic -k 4 -> 4.82921s | 4.82466s
 
 Point 1-e
 

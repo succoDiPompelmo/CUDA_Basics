@@ -130,6 +130,7 @@ inline void rasteriseTriangles( Mesh &transformedMesh,
 				float u, v, w;
 				if(face.inRange(x,y,u,v,w)){
 					float pixelDepth = face.getDepth(u,v,w);
+          #pragma omp critical
 					if( pixelDepth >= -1 && pixelDepth <= 1 && pixelDepth < depthBuffer.at(y * width + x)) {
 						depthBuffer.at(y * width + x) = pixelDepth;
 						runFragmentShader(frameBuffer, x + (width * y), face, float3(u,v,w));

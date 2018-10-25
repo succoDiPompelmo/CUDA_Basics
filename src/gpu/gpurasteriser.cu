@@ -427,17 +427,20 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
     checkCudaErrors(cudaMemcpy(GPUMeshes, CPUMeshes, sizeof(GPUMesh) * meshes.size(), cudaMemcpyHostToDevice));
 
     // MESH ARRAY TESTS
-    GPUMesh* GPUMeshTest = new GPUMesh[meshes.size()];
-    checkCudaErrors(cudaMemcpy(GPUMeshTest, GPUMeshes, sizeof(GPUMesh) * meshes.size(), cudaMemcpyDeviceToHost));
-    for (int i = 0; i < meshes.size(); i++)
-    {
-      //std::cout << "VERTEX TEST :  " << GPUMeshTest[i].vertices[0].y << '\n';
-      //std::cout << "VERTEX ORIGINAL: " << meshes.at(i).vertices[0].x <<'\n';
-    }
-    std::cout << "VERTEX COUNT ON THE ORIGINAL MESH : " <<  <<'\n';
-    std::cout << "VERTEX COUNT ON THE ORIGINAL MESH : " << meshes.at(0).vertices[0].x <<'\n';
-    std::cout << "VERTEX COUNT ON THE TEST MESH :  " << GPUMeshTest[0].vertices[0].x << '\n';
+    GPUMesh* GPUMeshesTest = new GPUMesh[meshes.size()];
+    checkCudaErrors(cudaMemcpy(GPUMeshesTest, GPUMeshes, sizeof(GPUMesh) * meshes.size(), cudaMemcpyDeviceToHost));
+    float4* verticesTest = new float4[GPUMeshesTest[0].vertexCount];
+    checkCudaErrors(cudaMemcpy(verticesTest, GPUMeshesTest[0].vertices, sizeof(float4) * GPUMeshesTest[0].vertexCount, cudaMemcpyDeviceToHost));
 
+    int counterM = 0;
+    for (int i = 0; i < GPUMeshesTest[0].vertexCount; i++)
+    {
+      if (verticesTest[i].x == meshes[0].vertices[i].x &&
+          verticesTest[i].y == meshes[0].vertices[i].y &&
+          verticesTest[i].z == meshes[0].vertices[i].z)
+          counterM++;
+    }
+    if (counterM == GPUMeshesTest[0].vertexCount) std::cout << "MESH TEST : PASSED" << '\n';
 
     unsigned long counter = 0;
     fillWorkQueue(workQueue, largestBoundingBoxSide, depthLimit, &counter);
