@@ -258,16 +258,46 @@ void fillWorkQueue(
 }
 
 // Kernel definition
-__global__ void frameBufferInitialisation(unsigned char *GPUframeBuffer)
+__global__
+void frameBufferInitialisation(unsigned char *GPUframeBuffer)
 {
   int index = (blockIdx.x) * 1024 + threadIdx.x * 4 + threadIdx.y;
   if (threadIdx.y == 3) GPUframeBuffer[index] = 255;
   else GPUframeBuffer[index] = 0;
 }
 
-__global__ void depthBufferInitialisation(float *GPUdepthBuffer)
+__global__
+void depthBufferInitialisation(float *GPUdepthBuffer)
 {
   GPUdepthBuffer[(blockIdx.x) * 1024 + threadIdx.x] = 1;
+}
+
+__global__
+void renderMeshesKernel(unsigned long totalItemsToRender,
+                        workItemGPU* workQueueGPU,
+                        GPUMesh* GPUMeshes,
+                        unsigned int meshCount,
+                        unsigned int width,
+                        unsigned int height,
+                        unsigned char* GPUframeBuffer,
+                        float* GPUdepthBuffer)
+{
+  for(unsigned int item = 0; item < totalItemsToRender; item++) {
+      workItemGPU objectToRender = workQueueGPU[item];
+      for (unsigned int meshIndex = 0; meshIndex < meshCount; meshIndex++) {
+          for(unsigned int triangleIndex = 0; triangleIndex < GPUMeshes[meshIndex].vertexCount / 3; triangleIndex++) {
+              float4 v0 = GPUMeshes[meshIndex].vertices[triangleIndex * 3 + 0];
+              float4 v1 = GPUMeshes[meshIndex].vertices[triangleIndex * 3 + 1];
+              float4 v2 = GPUMeshes[meshIndex].vertices[triangleIndex * 3 + 2];
+
+              runVertexShader(v0, objectToRender.distanceOffset, objectToRender.scale, width, height);
+              runVertexShader(v1, objectToRender.distanceOffset, objectToRender.scale, width, height);
+              runVertexShader(v2, objectToRender.distanceOffset, objectToRender.scale, width, height);
+
+              rasteriseTriangle(v0, v1, v2, GPUMeshes[meshIndex], triangleIndex, GPUframeBuffer, GPUdepthBuffer, width, height);
+          }
+      }
+  }
 }
 
 // This function kicks off the rasterisation process.
@@ -299,6 +329,7 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
     // Set device for GPU computation
     checkCudaErrors(cudaSetDevice(0));
 
+
     // Depth buffer allocation on the GPU
     float *GPUdepthBuffer;
     checkCudaErrors(cudaMalloc((void **)&GPUdepthBuffer, sizeof(float) * width * height));
@@ -308,6 +339,7 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
     depthBufferInitialisation<<<numBlocksD, threadsPerBlockD>>>(GPUdepthBuffer);
     // Wait for the kernel to finish the computation
     checkCudaErrors(cudaDeviceSynchronize());
+
 
     // Frame buffer allocation on the GPU
     unsigned char *GPUframeBuffer;
@@ -319,9 +351,9 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
     // Wait for the kernel to finish the computation
     checkCudaErrors(cudaDeviceSynchronize());
 
-    unsigned char* frameBufferTest = new unsigned char[width * height * 4];
 
     // Test if the frame buffer on the GPU contain the right value
+    unsigned char* frameBufferTest = new unsigned char[width * height * 4];
     checkCudaErrors(cudaMemcpy(frameBufferTest, GPUframeBuffer, sizeof(unsigned char) * width * height * 4, cudaMemcpyDeviceToHost));
     std::cout << "\n" << "FRAME BUFFER TEST : ";
     unsigned int counterF = 0;
@@ -393,13 +425,12 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
     workItemGPU* workQueue = new workItemGPU[totalItemsToRender];
     std::cout << "Number of items to be rendered: " << totalItemsToRender << std::endl;
 
-    // TRANSFER MESHES OM THE GPU
 
+    // TRANSFER MESHES OM THE GPU
     GPUMesh* CPUMeshes = new GPUMesh[meshes.size()];
     GPUMesh* GPUMeshes = nullptr;
     // Allocate the Meshes array on the GPU
     checkCudaErrors(cudaMalloc((void **)&GPUMeshes, sizeof(GPUMesh) * meshes.size()));
-
     for (unsigned int i = 0; i < meshes.size(); i++)
     {
       // Allocate Vertices information on GPU
@@ -408,12 +439,10 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
       // Allocate Normals information on GPU
       float3* normalsGPU;
       checkCudaErrors(cudaMalloc((void **)&normalsGPU, sizeof(float3) * meshes.at(i).vertexCount));
-
       // Transfer vertices to the GPU
       checkCudaErrors(cudaMemcpy(verticesGPU, (float4*)meshes.at(i).vertices, sizeof(float4) * meshes.at(i).vertexCount, cudaMemcpyHostToDevice));
       // Transfer normals to the GPU
       checkCudaErrors(cudaMemcpy(normalsGPU, meshes.at(i).normals, sizeof(float3) * meshes.at(i).vertexCount, cudaMemcpyHostToDevice));
-
       // Store the device pointer on the CPU array of meshes
       CPUMeshes[i].vertices = verticesGPU;
       CPUMeshes[i].normals = normalsGPU;
@@ -422,16 +451,15 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
       CPUMeshes[i].objectDiffuseColour = meshes.at(i).objectDiffuseColour;
       CPUMeshes[i].hasNormals = meshes.at(i).hasNormals;
     }
-
     // Transfer array of Meshes from CPU to GPU
     checkCudaErrors(cudaMemcpy(GPUMeshes, CPUMeshes, sizeof(GPUMesh) * meshes.size(), cudaMemcpyHostToDevice));
+
 
     // MESH ARRAY TESTS
     GPUMesh* GPUMeshesTest = new GPUMesh[meshes.size()];
     checkCudaErrors(cudaMemcpy(GPUMeshesTest, GPUMeshes, sizeof(GPUMesh) * meshes.size(), cudaMemcpyDeviceToHost));
     float4* verticesTest = new float4[GPUMeshesTest[0].vertexCount];
     checkCudaErrors(cudaMemcpy(verticesTest, GPUMeshesTest[0].vertices, sizeof(float4) * GPUMeshesTest[0].vertexCount, cudaMemcpyDeviceToHost));
-
     int counterM = 0;
     for (int i = 0; i < GPUMeshesTest[0].vertexCount; i++)
     {
@@ -442,14 +470,17 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
     }
     if (counterM == GPUMeshesTest[0].vertexCount) std::cout << "MESH TEST : PASSED" << '\n';
 
+
     unsigned long counter = 0;
     fillWorkQueue(workQueue, largestBoundingBoxSide, depthLimit, &counter);
+
 
     // Allocate workQueue into the GPU
     workItemGPU* workQueueGPU;
     checkCudaErrors(cudaMalloc((void **)&workQueueGPU, sizeof(workItemGPU) * totalItemsToRender));
     // Transfer from workQueue to workQueueGPU
     checkCudaErrors(cudaMemcpy(workQueueGPU, workQueue, sizeof(workItemGPU) * totalItemsToRender, cudaMemcpyHostToDevice));
+
 
     // WORKQUEUE TEST
     workItemGPU* workQueueGPUTest = new workItemGPU[totalItemsToRender];
@@ -463,8 +494,22 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
           workQueueGPUTest[i].distanceOffset.z == workQueue[i].distanceOffset.z)
           counterWorkQueue++;
     }
-
     if (counterWorkQueue == totalItemsToRender) std::cout << "\n" << "WORK QUEUE TEST :  PASSED" << "\n" <<'\n';
+
+
+    // RENDER MESHES KERNEL
+    int numBlocksM = 1;
+    dim3 threadsPerBlockM(totalItemsToRender);
+    renderMeshesKernel<<<numBlocksM, threadsPerBlockM>>>(totalItemsToRender,
+                                                         workQueueGPU,
+                                                         GPUMeshes,
+                                                         meshes.size(),
+                                                         width,
+                                                         height,
+                                                         GPUframeBuffer,
+                                                         GPUdepthBuffer);
+    // Wait for the kernel to finish the computation
+    checkCudaErrors(cudaDeviceSynchronize());
 
 	renderMeshes(
 			totalItemsToRender, workQueue,
