@@ -267,7 +267,7 @@ __global__ void frameBufferInitialisation(unsigned char *GPUframeBuffer)
 
 __global__ void depthBufferInitialisation(float *GPUdepthBuffer)
 {
-  GPUdepthBuffer[(blockIdx.x * 5 + blockIdx.y) * 1024 + threadIdx.x] = 0;
+  GPUdepthBuffer[(blockIdx.x) * 1024 + threadIdx.x] = 1;
 }
 
 // This function kicks off the rasterisation process.
@@ -303,7 +303,7 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
     float *GPUdepthBuffer;
     checkCudaErrors(cudaMalloc((void **)&GPUdepthBuffer, sizeof(float) * width * height));
     // Kernel - Depth buffer initialisation
-    dim3 numBlocksD(5, 405);
+    dim3 numBlocksD(2025, 1);
     dim3 threadsPerBlockD(1024, 1);
     depthBufferInitialisation<<<numBlocksD, threadsPerBlockD>>>(GPUdepthBuffer);
     // Wait for the kernel to finish the computation
@@ -340,7 +340,7 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
     unsigned int counterZ = 0;
     for (unsigned int i = 0; i < width * height; i++)
     {
-      if ((int) depthBufferTest[i] == 0) counterZ++;
+      if ((int) depthBufferTest[i] == 1) counterZ++;
     }
     if (counterZ == width * height) std::cout << "PASSED" << '\n' << "\n";
 
