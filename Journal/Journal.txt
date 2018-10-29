@@ -30,7 +30,18 @@ Point 1-e
 
 Point 2-a
 
-## TASK 6
+###TASK3
+
+Point 3-b
+
+Loop-1  -> 0.027438s
+Loop-2  -> 0.00531358s
+Loop-3  -> 2.7408e-05s
+
+Loop-Pixel-x -> 4.16e-07s
+Loop-Pixel-y -> 2.25e-07s
+
+###TASK6
 
 Point 6-b
 
