@@ -13,7 +13,7 @@ public:
 	float m20, m21, m22, m23;
 	float m30, m31, m32, m33;
 
-	constexpr mat4x4(	float v00, float v01, float v02, float v03,
+	__device__ __host__ mat4x4(	float v00, float v01, float v02, float v03,
 			float v10, float v11, float v12, float v13,
 			float v20, float v21, float v22, float v23,
 			float v30, float v31, float v32, float v33) :
@@ -22,13 +22,13 @@ public:
 		m20(v20), m21(v21), m22(v22), m23(v23),
 		m30(v30), m31(v31), m32(v32), m33(v33) {};
 
-	constexpr mat4x4() :
+	__device__ __host__ mat4x4() :
 		m00(0), m01(0), m02(0), m03(0),
 		m10(0), m11(0), m12(0), m13(0),
 		m20(0), m21(0), m22(0), m23(0),
 		m30(0), m31(0), m32(0), m33(0) {}
 
-	constexpr mat4x4 operator* (mat4x4 const other) const {
+	__device__ __host__ mat4x4 operator* (mat4x4 const other) const {
 		return mat4x4(
 			other.m00 * m00 + other.m10 * m01 + other.m20 * m02 + other.m30 * m03,
 			other.m01 * m00 + other.m11 * m01 + other.m21 * m02 + other.m31 * m03,
@@ -49,7 +49,7 @@ public:
 		);
 	}
 
-	mat4x4& operator*= (mat4x4 const other) {
+	__device__ __host__ mat4x4& operator*= (mat4x4 const other) {
 		this->m00 = other.m00 * this->m00 + other.m10 * this->m01 + other.m20 * this->m02 + other.m30 * this->m03;
 		this->m01 = other.m01 * this->m00 + other.m11 * this->m01 + other.m21 * this->m02 + other.m31 * this->m03;
 		this->m02 = other.m02 * this->m00 + other.m12 * this->m01 + other.m22 * this->m02 + other.m32 * this->m03;
@@ -69,7 +69,7 @@ public:
 		return *this;
 	}
 
-	float4 operator* (float4 const &other) const {
+	__device__ __host__ float4 operator* (float4 const &other) const {
 		return make_float4(
 			this->m00 * other.x + this->m01 * other.y + this->m02 * other.z + this->m03 * other.w,
 			this->m10 * other.x + this->m11 * other.y + this->m12 * other.z + this->m13 * other.w,

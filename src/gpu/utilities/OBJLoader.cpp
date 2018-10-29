@@ -2,9 +2,14 @@
 #include <algorithm>
 #include <exception>
 #include <regex>
+#include <vector>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <limits>
 #include "cuda_runtime.h"
 
-std::vector<std::string> splitGPU(std::string target, std::string delimiter)
+inline std::vector<std::string> split(std::string target, std::string delimiter)
 {
 	std::vector<std::string> res;
 	size_t pos = 0;
@@ -16,13 +21,13 @@ std::vector<std::string> splitGPU(std::string target, std::string delimiter)
 	return res;
 }
 
-std::vector<Material> loadMaterialsGPU(std::string const srcFile, bool quiet) {
+inline std::vector<Material> loadMaterials(std::string const srcFile, bool quiet) {
 	std::vector<Material> materials;
 	std::ifstream objFile(srcFile);
 	if (objFile.is_open()) {
 		std::string line;
 		while (std::getline(objFile, line)) {
-			std::vector<std::string> parts = splitGPU(line, " ");
+			std::vector<std::string> parts = split(line, " ");
 			if (parts.at(0) == "newmtl" && parts.size() >= 2) {
 				materials.emplace_back(parts.at(1));
 			} else if (materials.size() > 0) {
@@ -61,7 +66,7 @@ std::vector<Material> loadMaterialsGPU(std::string const srcFile, bool quiet) {
 	return materials;
 }
 
-void copyGeometryDataIntoLastMeshGPU(std::vector<GPUMesh> &meshes, std::vector<float4> &meshVertices,
+void copyGeometryDataIntoLastMesh(std::vector<GPUMesh> &meshes, std::vector<float4> &meshVertices,
                               std::vector<float3> &meshNormals) {
 	float4* permanentMeshVertices = new float4[meshVertices.size()];
 	float3* permanentMeshNormals = new float3[meshNormals.size()];
@@ -89,18 +94,18 @@ std::vector<GPUMesh> loadWavefrontGPU(std::string const srcFile, bool quiet)
 	std::vector<float4> meshVertices;
 	std::vector<float3> meshNormals;
 
-	std::vector<Material> materials = loadMaterialsGPU(std::regex_replace(srcFile, std::regex("\\b.obj$"), ".mtl"), quiet);
+	std::vector<Material> materials = loadMaterials(std::regex_replace(srcFile, std::regex("\\b.obj$"), ".mtl"), quiet);
 
 	if (objFile.is_open()) {
 		std::string line;
 		while (std::getline(objFile, line)) {
 
-			std::vector<std::string> parts = splitGPU(line, " ");
+			std::vector<std::string> parts = split(line, " ");
 			if (parts.size() > 0) {
 				// New Mesh object
 				if (parts.at(0) == "o" && parts.size() >= 2) {
 					if(meshes.size() > 0) {
-						copyGeometryDataIntoLastMeshGPU(meshes, meshVertices, meshNormals);
+						copyGeometryDataIntoLastMesh(meshes, meshVertices, meshNormals);
 					}
 					meshes.emplace_back();
 				} else if (parts.at(0) == "v" && parts.size() >= 4) {
@@ -150,12 +155,12 @@ std::vector<GPUMesh> loadWavefrontGPU(std::string const srcFile, bool quiet)
 
 					bool quadruple = (parts.size() >= 5) ? true : false;
 
-					std::vector<std::string> parts1 = splitGPU(parts.at(1),"/");
-					std::vector<std::string> parts2 = splitGPU(parts.at(2),"/");
-					std::vector<std::string> parts3 = splitGPU(parts.at(3),"/");
+					std::vector<std::string> parts1 = split(parts.at(1),"/");
+					std::vector<std::string> parts2 = split(parts.at(2),"/");
+					std::vector<std::string> parts3 = split(parts.at(3),"/");
 					std::vector<std::string> parts4;
 					if (quadruple) {
-						parts4 = splitGPU(parts.at(4),"/");
+						parts4 = split(parts.at(4),"/");
 					}
 
 					if (parts1.size() < 1 || parts1.size() != parts2.size() || parts2.size() != parts3.size() || (quadruple && parts4.size() != parts1.size())) {
@@ -234,7 +239,7 @@ std::vector<GPUMesh> loadWavefrontGPU(std::string const srcFile, bool quiet)
 	} else {
 		throw std::runtime_error("Reading OBJ file failed. This is usually because the operating system can't find it. Check if the relative path (to your terminal's working directory) is correct.");
 	}
-	copyGeometryDataIntoLastMeshGPU(meshes, meshVertices, meshNormals);
+	copyGeometryDataIntoLastMesh(meshes, meshVertices, meshNormals);
 
 	return meshes;
 }

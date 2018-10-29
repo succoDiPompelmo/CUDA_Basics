@@ -29,3 +29,22 @@ Point 1-e
 ###TASK2
 
 Point 2-a
+
+## TASK 6
+
+Point 6-b
+
+Whithout memory access
+
+-r 1920x1080 -d 3 ->  0.100658s | 0.100974s
+-r 1920x1080 -d 4 ->  0.184759s | 0.183412s
+
+With memory access
+
+-r 1920x1080 -d 3 ->  0.193871s | 0.193871s
+-r 1920x1080 -d 4 ->  0.250106s | 0.245423s
+
+
+
+
+
