@@ -418,28 +418,28 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
 
 
     // Test if the frame buffer on the GPU contain the right value
-    // unsigned char* frameBufferTest = new unsigned char[width * height * 4];
-    // checkCudaErrors(cudaMemcpy(frameBufferTest, GPUframeBuffer, sizeof(unsigned char) * width * height * 4, cudaMemcpyDeviceToHost));
-    // std::cout << "\n" << "FRAME BUFFER TEST : ";
-    // unsigned int counterF = 0;
-    // unsigned int counterF0 = 0;
-    // for (unsigned int i = 0; i < width * height * 4; i++)
-    // {
-    //   if ((int) frameBufferTest[i] == 255) counterF++;
-    //   else counterF0++;
-    // }
-    // if (counterF == width * height && counterF0 == width * height * 3) std::cout << "PASSED" << "\n" << '\n';
+    unsigned char* frameBufferTest = new unsigned char[width * height * 4];
+    checkCudaErrors(cudaMemcpy(frameBufferTest, GPUframeBuffer, sizeof(unsigned char) * width * height * 4, cudaMemcpyDeviceToHost));
+    std::cout << "\n" << "FRAME BUFFER TEST : ";
+    unsigned int counterF = 0;
+    unsigned int counterF0 = 0;
+    for (unsigned int i = 0; i < width * height * 4; i++)
+    {
+      if ((int) frameBufferTest[i] == 255) counterF++;
+      else counterF0++;
+    }
+    if (counterF == width * height && counterF0 == width * height * 3) std::cout << "PASSED" << "\n" << '\n';
 
     // Test if the depth buffer on the GPU contain the right value
-    // int* depthBufferTest = new int[width * height];
-    // checkCudaErrors(cudaMemcpy(depthBufferTest, GPUdepthBuffer, sizeof(int) * width * height, cudaMemcpyDeviceToHost));
-    // std::cout << "\n" << "DEPTH BUFFER TEST : ";
-    // unsigned int counterZ = 0;
-    // for (unsigned int i = 0; i < width * height; i++)
-    // {
-    //   if ((int) depthBufferTest[i] == 16777216) counterZ++;
-    // }
-    // if (counterZ == width * height) std::cout << "PASSED" << '\n' << "\n";
+    int* depthBufferTest = new int[width * height];
+    checkCudaErrors(cudaMemcpy(depthBufferTest, GPUdepthBuffer, sizeof(int) * width * height, cudaMemcpyDeviceToHost));
+    std::cout << "\n" << "DEPTH BUFFER TEST : ";
+    unsigned int counterZ = 0;
+    for (unsigned int i = 0; i < width * height; i++)
+    {
+      if ((int) depthBufferTest[i] == 16777216) counterZ++;
+    }
+    if (counterZ == width * height) std::cout << "PASSED" << '\n' << "\n";
 
     // We first need to allocate some buffers.
     // The framebuffer contains the image being rendered.
@@ -522,19 +522,19 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
 
 
     // MESH ARRAY TESTS
-    // GPUMesh* GPUMeshesTest = new GPUMesh[meshes.size()];
-    // checkCudaErrors(cudaMemcpy(GPUMeshesTest, GPUMeshes, sizeof(GPUMesh) * meshes.size(), cudaMemcpyDeviceToHost));
-    // float4* verticesTest = new float4[GPUMeshesTest[0].vertexCount];
-    // checkCudaErrors(cudaMemcpy(verticesTest, GPUMeshesTest[0].vertices, sizeof(float4) * GPUMeshesTest[0].vertexCount, cudaMemcpyDeviceToHost));
-    // int counterM = 0;
-    // for (int i = 0; i < GPUMeshesTest[4].vertexCount; i++)
-    // {
-    //   if (verticesTest[i].x == meshes[0].vertices[i].x &&
-    //       verticesTest[i].y == meshes[0].vertices[i].y &&
-    //       verticesTest[i].z == meshes[0].vertices[i].z)
-    //       counterM++;
-    // }
-    // if (counterM == GPUMeshesTest[0].vertexCount) std::cout << "\n" << "MESH TEST : PASSED" << '\n';
+    GPUMesh* GPUMeshesTest = new GPUMesh[meshes.size()];
+    checkCudaErrors(cudaMemcpy(GPUMeshesTest, GPUMeshes, sizeof(GPUMesh) * meshes.size(), cudaMemcpyDeviceToHost));
+    float4* verticesTest = new float4[GPUMeshesTest[0].vertexCount];
+    checkCudaErrors(cudaMemcpy(verticesTest, GPUMeshesTest[0].vertices, sizeof(float4) * GPUMeshesTest[0].vertexCount, cudaMemcpyDeviceToHost));
+    int counterM = 0;
+    for (int i = 0; i < GPUMeshesTest[4].vertexCount; i++)
+    {
+      if (verticesTest[i].x == meshes[0].vertices[i].x &&
+          verticesTest[i].y == meshes[0].vertices[i].y &&
+          verticesTest[i].z == meshes[0].vertices[i].z)
+          counterM++;
+    }
+    if (counterM == GPUMeshesTest[0].vertexCount) std::cout << "\n" << "MESH TEST : PASSED" << '\n';
 
 
     unsigned long counter = 0;
@@ -548,18 +548,18 @@ std::vector<unsigned char> rasteriseGPU(std::string inputFile, unsigned int widt
 
 
     // WORKQUEUE TEST
-    // workItemGPU* workQueueGPUTest = new workItemGPU[totalItemsToRender];
-    // checkCudaErrors(cudaMemcpy(workQueueGPUTest , workQueueGPU, sizeof(workItemGPU) * totalItemsToRender, cudaMemcpyDeviceToHost));
-    // int counterWorkQueue = 0;
-    // for (int i = 0; i < totalItemsToRender; i++)
-    // {
-    //   if (workQueueGPUTest[i].scale == workQueue[i].scale &&
-    //       workQueueGPUTest[i].distanceOffset.x == workQueue[i].distanceOffset.x &&
-    //       workQueueGPUTest[i].distanceOffset.y == workQueue[i].distanceOffset.y &&
-    //       workQueueGPUTest[i].distanceOffset.z == workQueue[i].distanceOffset.z)
-    //       counterWorkQueue++;
-    // }
-    // if (counterWorkQueue == totalItemsToRender) std::cout << "\n" << "WORK QUEUE TEST :  PASSED" << "\n" <<'\n';
+    workItemGPU* workQueueGPUTest = new workItemGPU[totalItemsToRender];
+    checkCudaErrors(cudaMemcpy(workQueueGPUTest , workQueueGPU, sizeof(workItemGPU) * totalItemsToRender, cudaMemcpyDeviceToHost));
+    int counterWorkQueue = 0;
+    for (int i = 0; i < totalItemsToRender; i++)
+    {
+      if (workQueueGPUTest[i].scale == workQueue[i].scale &&
+          workQueueGPUTest[i].distanceOffset.x == workQueue[i].distanceOffset.x &&
+          workQueueGPUTest[i].distanceOffset.y == workQueue[i].distanceOffset.y &&
+          workQueueGPUTest[i].distanceOffset.z == workQueue[i].distanceOffset.z)
+          counterWorkQueue++;
+    }
+    if (counterWorkQueue == totalItemsToRender) std::cout << "\n" << "WORK QUEUE TEST :  PASSED" << "\n" <<'\n';
 
 
 		// Start timer
